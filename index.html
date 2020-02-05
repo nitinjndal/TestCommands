@@ -1,0 +1,896 @@
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+
+<!DOCTYPE html>
+<html>
+		<body>
+				<title> CryptoPriceComparison</title>
+				<h2>CryptoCurrency Price Comparison Indian Exchanges</h2>
+
+
+				<style>
+table, td {
+		border: 1px solid black;
+				.floatedTable {
+						float:left;
+				}
+				.inlineTable {
+						display: inline-block;
+				}
+}
+				</style>
+
+				<table id="TableBuyRaw" style="display: inline-block;">
+				</table>
+
+				<table id="TableSellRaw" style="display: inline-block;">
+				</table>
+
+				<br>
+				<h2>After Considering fees</h2>
+
+				<table id="TableBuyFee" style="display: inline-block;">
+				</table>
+
+				<table id="TableSellFee" style="display: inline-block;">
+				</table>
+
+				<br>
+				<h2 id=usd2inrPriceHead>Foreign Exchange Prices converted to INR </h2>
+				<table id="USDBuyINR" style="display: inline-block;">
+				</table>
+				<table id="USDSellINR" style="display: inline-block;">
+				</table>
+				<br>
+				<h2>Foreign Exchange Prices in USDT </h2>
+				<table id="USDBuy" style="display: inline-block;">
+				</table>
+				<table id="USDSell" style="display: inline-block;">
+				</table>
+
+				<br>
+				<h2>India Sell Price by Foreign Buy Price </h2>
+				<table id="INRSellByHITBTCBuy" style="display: inline-block;">
+				</table>
+
+				<br>
+				<h2>Foreign Sell Price by India Buy Price </h2>
+				<table id="HITBTCSELLbyINRbuy" style="display: inline-block;">
+				</table>
+				
+				<script>
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// JAVASCRIPT STARTS ///////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function CreateNewJsonObject ( Hierarchy) {
+		element={};
+		for(var i=Hierarchy.length -1 ; i>=1; i--) {
+				elementName=Hierarchy[i];
+				newElement={}
+				newElement[elementName]=element;
+				element=newElement;
+		}
+		return element;
+}
+
+function addToExistingJsonObject (jsonObject, Key, Value) {
+		cnt=0
+				keyNest=Key.split(".");
+		var current_object=jsonObject;
+		for (var i=0;i<keyNest.length - 1;i++) {
+				currentKey=keyNest[i];
+				if(current_object.hasOwnProperty(currentKey)) {
+						current_object=current_object[currentKey];
+				} else {
+						keyNest2=keyNest.slice();  // copy array by value
+						keyNest2.splice(0,i)
+								current_object[currentKey]=CreateNewJsonObject(keyNest2)
+								current_object=current_object[currentKey];
+						if(cnt>10) break;
+
+				}
+		}
+		currentKey=keyNest[i];
+		current_object[currentKey]=Value
+}
+
+function FetchfromExchange(url,ParsingFunction,arg2) {
+		Reqd_No_of_Fetch++;
+		fetch(url, {mode: "cors",
+		}).then(function(response) {
+				return response.json();
+		}).then(function(k) {
+				ParsingFunction(k,arg2);
+				console.log(JSON.stringify(all_price_data));
+				Exchanges_Fetched++;
+		}).catch(function(error) {  
+				console.log('Request failed', error)  
+						Exchanges_Fetched++;
+		});
+}
+
+
+function ParseCryptopia(k) {
+		console.log("CRYPTOPIA")
+	console.log(k.Data.length); 
+		console.log(JSON.stringify(k.Data)); 
+				var marketname;
+				var data;
+				var Currencies= ["BCH", "BTC", "DASH", "ETH", "GAS", "LTC", "NEO", "OMG", "QTUM", "REQ", "XLM", "XRP", "ZEC", "ZRX", "RPX", "DBC", "XMR", "BAT", "GNT", "AE", "TRX"];
+		for(var i=0; i< k.Data.length; i++) {
+				marketname=k.Data[i].Label;
+						data=k.Data[i];
+		for(var curridx=0; curridx < Currencies.length; curridx++) {
+				curr=Currencies[curridx];
+				var m2=curr + "/USDT";
+				// console.log(marketname + " CURR=" + curr + "/USDT"); 
+					if(marketname == m2) {
+				  // console.log("123" + marketname + " CURR+" + curr); 
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPriceAct.Cryptopia",data.AskPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPrice.Cryptopia",data.AskPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPriceAct.Cryptopia",data.BidPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPrice.Cryptopia",data.BidPrice)
+				}
+																													}
+		}
+				console.log(JSON.stringify(all_price_data_usd)); 
+}
+
+function ParseHitBTC(k) {
+		console.log("HitBTC")
+	console.log(k.length); 
+		console.log(JSON.stringify(k)); 
+				var marketname;
+				var data;
+				var Currencies= ["BCH", "BTC", "DASH", "ETH", "GAS", "LTC", "NEO", "OMG", "QTUM", "REQ", "XLM", "XRP", "ZEC", "ZRX", "RPX", "DBC", "XMR", "BAT", "GNT", "AE", "TRX"];
+		for(var i=0; i< k.length; i++) {
+				marketname=k[i].symbol;
+						data=k[i];
+		for(var curridx=0; curridx < Currencies.length; curridx++) {
+				curr=Currencies[curridx];
+				var m2=curr + "USDT";
+				// console.log(marketname + " CURR=" + curr + "/USDT"); 
+					if(marketname == m2 || marketname == curr + "USD") {
+				  // console.log("123" + marketname + " CURR+" + curr); 
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPrice.HitBTC",data.ask)
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPriceAct.HitBTC",data.ask)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPrice.HitBTC",data.bid)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPriceAct.HitBTC",data.bid)
+				}
+																													}
+		}
+				console.log(JSON.stringify(all_price_data_usd)); 
+}
+
+function ParseBinance(k) {
+		console.log("Binance")
+	console.log(k.length); 
+		console.log(JSON.stringify(k)); 
+				var marketname;
+				var data;
+				var Currencies= ["BCH", "BTC", "DASH", "ETH", "GAS", "LTC", "NEO", "OMG", "QTUM", "REQ", "XLM", "XRP", "ZEC", "ZRX", "RPX", "DBC", "XMR", "BAT", "GNT", "AE", "TRX"];
+		for(var i=0; i< k.length; i++) {
+				marketname=k[i].symbol;
+						data=k[i];
+		for(var curridx=0; curridx < Currencies.length; curridx++) {
+				curr=Currencies[curridx];
+				var m2=curr + "USDT";
+				// console.log(marketname + " CURR=" + curr + "/USDT"); 
+					if(marketname == m2 ) {
+				  // console.log("123" + marketname + " CURR+" + curr); 
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPrice.Binance",data.askPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPriceAct.Binance",data.askPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPrice.Binance",data.bidPrice)
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPriceAct.Binance",data.bidPrice)
+				}
+																													}
+		}
+				console.log(JSON.stringify(all_price_data_usd)); 
+}
+
+
+function ParseBitfinex(k) {
+		console.log("Bitfinex")
+	console.log(k.length); 
+		console.log(JSON.stringify(k)); 
+				var marketname;
+				var data;
+				var Currencies= ["BCH", "BTC", "DSH", "ETH", "GAS", "LTC", "NEO", "OMG", "QTM", "REQ", "XLM", "XRP", "ZEC", "ZRX", "RPX", "DBC", "XMR", "BAT", "GNT", "AE", "TRX"];
+		for(var i=0; i< k.length; i++) {
+				marketname=k[i][0];
+						data=k[i]; 
+																	console.log("BITFINEX " + marketname + " BUY=" + data[1] + " SELL=" + data[3])
+		for(var curridx=0; curridx < Currencies.length; curridx++) {
+				curr=Currencies[curridx];
+				var m2="t"+ curr + "USD";
+					if(marketname == m2 ) {
+				if(curr=="QTM") curr="QTUM"
+				else if(curr=="DSH") curr="DASH"
+				  // console.log("123" + marketname + " CURR+" + curr); 
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPrice.Bitfinex",data[3])
+								addToExistingJsonObject(all_price_data_usd,curr + ".BuyPriceAct.Bitfinex",data[3])
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPrice.Bitfinex",data[1])
+								addToExistingJsonObject(all_price_data_usd,curr + ".SellPriceAct.Bitfinex",data[1])
+				}
+																													}
+		}
+				console.log(JSON.stringify(all_price_data_usd)); 
+}
+
+
+
+
+function CheckForeignExchangesDiff () {
+		var Currencies=getAllCurrencies(all_price_data_usd);
+		var FrExchanges=getAllExchanges(all_price_data_usd);
+		var InrBuyPrice=0
+		var usdBuyPrice=0
+		var InrSellPrice=0
+		var usdSellPrice=0
+		var Investment=100000;
+		for(var FrExchange in FrExchanges) {
+						var FrExchangeName=FrExchanges[FrExchange];
+
+				for(var i in Currencies){
+						CurrenyName=Currencies[i];
+						console.log("CurrenyName=" + CurrenyName  )
+						InrBuyPrice=all_price_data_fee[CurrenyName].minBuyPrice
+						InrSellPrice=all_price_data_fee[CurrenyName].maxSellPrice
+						usdBuyPrice=all_price_data_usd[CurrenyName].BuyPrice[FrExchangeName]
+						usdBuyPriceAct=all_price_data_usd[CurrenyName].BuyPriceAct[FrExchangeName]
+						usdSellPrice=all_price_data_usd[CurrenyName].SellPrice[FrExchangeName]
+						usdSellPriceAct=all_price_data_usd[CurrenyName].SellPriceAct[FrExchangeName]
+						
+
+						NoOfCurrencyUnitsInrExchange=Math.round(Investment/InrBuyPrice);
+						NoOfCurrencyUnitsFRExchange=Math.round(NoOfCurrencyUnitsInrExchange);
+						FrCurrencyGotAfterSelling=Math.round(NoOfCurrencyUnitsFRExchange*usdSellPrice);
+						NoOfCurrencyUnitsAfterBuying=Math.round(FrCurrencyGotAfterSelling/usdBuyPrice);
+						ValueGotAfterBuying=Math.round(NoOfCurrencyUnitsAfterBuying*InrSellPrice);
+						Profit=Math.round(ValueGotAfterBuying-Investment);
+					  
+						
+						buyDifferenceperLakh=Math.round((usdSellPrice*Investment/InrBuyPrice)-Investment);
+						sellDifferenceperLakh=Math.round(InrBuyPrice*Investment/usdSellPrice-Investment);
+						buySellDifferenceperLakh=Math.round(sellDifferenceperLakh+buyDifferenceperLakh);
+
+						console.log("Exchange=" + FrExchangeName + " Currency = " + CurrenyName + " Profit=" + Profit + " BuySellDiff="+ buySellDifferenceperLakh + " Buy Diff=" + buyDifferenceperLakh + " Sell Diff=" + sellDifferenceperLakh + " InrBuyPrice=" + InrBuyPrice + " InrSellPrice=" + InrSellPrice + " usdBuyPrice=" + usdBuyPrice + " usdSellPrice= " + usdSellPrice + " usdBuyPriceAct=" + usdBuyPriceAct + " usdSellPriceAct= " + usdSellPriceAct+ " MinInrBuyExchange=" +all_price_data_fee[CurrenyName].minBuyExchange + " MaxSellInrExchange=" +all_price_data_fee[CurrenyName].maxSellExchange  )
+
+				}
+		}
+}
+
+
+function CreateINRbyFrnExchange (TableID, ComparisonType) {
+		var Currencies=getAllCurrencies(all_price_data_usd);
+		var FrExchanges=getAllExchanges(all_price_data_usd);
+		var InrBuyPrice=0
+		var usdBuyPrice=0
+		var InrSellPrice=0
+		var usdSellPrice=0
+		var table = document.getElementById(TableID);
+		// var table = document.getElementById("INRSellByHITBTCBuy");
+																																									
+		rownum=0;
+		colnum=0;
+
+		row[rownum] = table.insertRow(rownum);
+
+				cell1=row[rownum].insertCell(colnum++);
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+			for(var i in FrExchanges){
+				cell1=row[rownum].insertCell(colnum++);
+				cell1.colSpan=3;
+				cell1.innerHTML =FrExchanges[i];
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+
+		}
+
+				colnum=0;
+		row[++rownum] = table.insertRow(rownum);
+				cell1=row[rownum].insertCell(colnum++);
+			for(var i in FrExchanges){
+				cell1=row[rownum].insertCell(colnum++);
+				if(ComparisonType=="USD_SELL_INR_BUY") cell1.innerHTML = "Inr";
+				else if (ComparisonType=="INR_SELL_USD_BUY") cell1.innerHTML = "Foreign";
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+
+				cell1=row[rownum].insertCell(colnum++);
+				if(ComparisonType=="USD_SELL_INR_BUY") cell1.innerHTML = "Foreign";
+			  else if (ComparisonType=="INR_SELL_USD_BUY") cell1.innerHTML = "Inr";
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+
+				cell1=row[rownum].insertCell(colnum++);
+				if(ComparisonType=="USD_SELL_INR_BUY") cell1.innerHTML = "Fr/Inr";
+				else if (ComparisonType=="INR_SELL_USD_BUY") cell1.innerHTML = "Inr/Fr";
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+
+
+
+		}
+																																																																																	
+var temp;
+				for(var i in Currencies){
+														CurrenyName=Currencies[i];
+														colnum=0;
+														row[++rownum] = table.insertRow(rownum);
+																																																																		
+														cell1=row[rownum].insertCell(colnum++);
+														cell1.innerHTML = CurrenyName;
+												cell1.style.fontWeight="bold";
+												cell1.style.textAlign="center";
+												var j=0;
+										for(var FrExchange in FrExchanges) {
+														j++;
+														var FrExchangeName=FrExchanges[FrExchange];
+														InrBuyPrice=all_price_data_fee[CurrenyName].minBuyPrice
+														InrSellPrice=all_price_data_fee[CurrenyName].maxSellPrice
+														usdBuyPrice=all_price_data_usd[CurrenyName].BuyPrice[FrExchangeName]
+														usdSellPrice=all_price_data_usd[CurrenyName].SellPrice[FrExchangeName]
+	
+														buyRatio=Math.round(1000*InrBuyPrice/usdBuyPrice)/1000;
+														sellRatio=Math.round(1000*InrSellPrice/usdSellPrice)/1000;
+
+														usdSellbyINRbuy=Math.round(1000*usdSellPrice/InrBuyPrice)/1000;
+														INRSellbyUsdbuy=Math.round(1000*InrSellPrice/usdBuyPrice)/1000;
+
+														
+														cell1=row[rownum].insertCell(colnum++);
+														if(ComparisonType=="USD_SELL_INR_BUY") temp = InrBuyPrice;
+														else if (ComparisonType=="INR_SELL_USD_BUY") temp = usdBuyPrice;
+												if(temp == null || isNaN(temp)) temp="X";
+										if(temp=="X")  cell1.bgColor = "Black";
+														 cell1.innerHTML=temp;																											
+
+														cell1=row[rownum].insertCell(colnum++);
+														if(ComparisonType=="USD_SELL_INR_BUY") temp = usdSellPrice;
+														else if (ComparisonType=="INR_SELL_USD_BUY") temp = InrSellPrice;
+												if(temp == null || isNaN(temp)) temp="X";
+										if(temp=="X")  cell1.bgColor = "Black";
+														 cell1.innerHTML=temp;																											
+
+														cell1=row[rownum].insertCell(colnum++);
+														if(ComparisonType=="USD_SELL_INR_BUY") temp = usdSellbyINRbuy;
+														else if (ComparisonType=="INR_SELL_USD_BUY") temp = INRSellbyUsdbuy;
+														 cell1.innerHTML=temp;																											
+														if(temp == null || isNaN(temp)) temp="X";
+														else temp <=1 ? cell1.bgColor = "#ff9980" : cell1.bgColor = "#99ff99";
+														if(temp=="X")  cell1.bgColor = "Black";
+										}
+		}
+}
+
+function ParseUsdInr(k) {
+usd2inr=	k.rates.INR																								
+usd2inrPriceHead																																						
+var h2 = document.getElementById("usd2inrPriceHead");
+h2.innerHTML="Foreign Exchange Prices converted to INR" + " (Conversion Rate=" + usd2inr + ")";
+		  console.log("USD2INR="+	usd2inr)
+
+}
+
+function ParseBitBns(k) {
+	console.log("BITBNS")
+	console.log(JSON.stringify(k)); 
+
+			for(var i=0; i< k.length; i++) {
+				for (var curr in k[i]) {
+					addToExistingJsonObject(all_price_data,curr + ".SellPrice.BitBns",k[i][curr].buyPrice)
+					addToExistingJsonObject(all_price_data,curr + ".BuyPrice.BitBns",k[i][curr].sellPrice)
+
+				}
+			}
+}
+
+
+function ParseZebpay(k,JsonVar) {
+				console.log("ZEBPAY")
+				console.log(JSON.stringify(k)); 
+				addToExistingJsonObject(all_price_data,JsonVar + ".SellPrice.ZebPay",k.sell)
+				addToExistingJsonObject(all_price_data,JsonVar + ".BuyPrice.ZebPay",k.buy)
+}
+
+
+function ParseCoinSecure(j) {
+				console.log("COINSECURE")
+				console.log(JSON.stringify(j)); 
+
+				addToExistingJsonObject(all_price_data,"BTC.SellPrice.Coinsecure",j.message.bid/100)
+				addToExistingJsonObject(all_price_data,"BTC.BuyPrice.Coinsecure",j.message.ask/100)
+
+
+}
+
+function ParseCoindelta(j) {
+				console.log("Coindelta")
+						for(var i=0; i< j.length; i++) {
+								var marketname=j[i].MarketName
+				     console.log(JSON.stringify(j)); 
+										marketname=marketname.toUpperCase()
+										currency=marketname.split("-")[0]
+										temp=marketname.split("-")[1]
+											if(temp == "INR") {
+														addToExistingJsonObject(all_price_data,currency + ".BuyPrice.Coindelta",j[i].Ask)
+														addToExistingJsonObject(all_price_data,currency + ".SellPrice.Coindelta",j[i].Bid)
+																																				}
+
+						}
+}
+
+function ParseKoinex(k) {
+	console.log("KOINEX")
+	console.log(JSON.stringify(k)); 
+
+				for (var curr in k.stats.inr) {
+					addToExistingJsonObject(all_price_data,curr + ".SellPrice.Koinex",k.stats.inr[curr].highest_bid)
+					addToExistingJsonObject(all_price_data,curr + ".BuyPrice.Koinex",k.stats.inr[curr].lowest_ask)
+
+				}
+}
+
+function ParseCoinome(j) {
+
+				console.log("coinome")
+						console.log(JSON.stringify(j)); 
+				addToExistingJsonObject(all_price_data,"BCH.SellPrice.Coinome",j["bch-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"BCH.BuyPrice.Coinome",j["bch-inr"].lowest_ask)
+
+						addToExistingJsonObject(all_price_data,"BTC.SellPrice.Coinome",j["btc-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"BTC.BuyPrice.Coinome",j["btc-inr"].lowest_ask)
+
+						addToExistingJsonObject(all_price_data,"LTC.SellPrice.Coinome",j["ltc-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"LTC.BuyPrice.Coinome",j["ltc-inr"].lowest_ask)
+
+						addToExistingJsonObject(all_price_data,"DASH.SellPrice.Coinome",j["dash-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"DASH.BuyPrice.Coinome",j["dash-inr"].lowest_ask)
+
+						addToExistingJsonObject(all_price_data,"ZEC.SellPrice.Coinome",j["zec-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"ZEC.BuyPrice.Coinome",j["zec-inr"].lowest_ask)
+
+						addToExistingJsonObject(all_price_data,"DGB.SellPrice.Coinome",j["dgb-inr"].highest_bid)
+						addToExistingJsonObject(all_price_data,"DGB.BuyPrice.Coinome",j["dgb-inr"].lowest_ask)
+						console.log(JSON.stringify(all_price_data));
+}
+
+
+function FetchAll(){
+
+		FetchfromExchange(proxyUrl + "https://www.bitbns.com/order/getTickerAll",ParseBitBns)
+
+		FetchfromExchange(proxyUrl + "https://api.fixer.io/latest?base=USD;symbols=USD,INR",ParseUsdInr)
+			
+/////////////////////////////////////////// ZEBPAY /////////////////////////////////////
+var ZebPayCurrencies = {
+  "xrp": "XRP",
+  "btc": "BTC",
+  "bch": "BCH" ,
+		"ltc" :  "LTC",
+		"eth" : "ETH"
+
+};
+for (var s in ZebPayCurrencies)
+{
+			FetchfromExchange(proxyUrl + "https://www.zebapi.com/api/v1/market/ticker-new/" + s + "/inr",ParseZebpay,ZebPayCurrencies[s]) 
+}
+
+///////////////////////////////////////// ZEBPAY //////////////////////////////////////
+
+			FetchfromExchange(proxyUrl + "https://api.coinsecure.in/v1/exchange/ticker",ParseCoinSecure) 
+		 FetchfromExchange("https://coindelta.com/api/v1/public/getticker/",ParseCoindelta) 
+		 FetchfromExchange("https://koinex.in/api/ticker",ParseKoinex) 
+			FetchfromExchange(proxyUrl + "https://www.coinome.com/api/v1/ticker.json",ParseCoinome) 
+FetchfromExchange( "https://www.cryptopia.co.nz/api/GetMarkets/USDT",ParseCryptopia) 
+FetchfromExchange( proxyUrl + "https://api.hitbtc.com/api/2/public/ticker",ParseHitBTC) 
+FetchfromExchange( proxyUrl + "https://api.binance.com/api/v3/ticker/bookTicker",ParseBinance) 
+
+
+
+
+//https://api.bitfinex.com/v1/symbols
+
+bitfinex_symbols=["btcusd","ltcusd","ltcbtc","ethusd","ethbtc","etcbtc","etcusd","rrtusd","rrtbtc","zecusd","zecbtc","xmrusd","xmrbtc","dshusd","dshbtc","btceur","xrpusd","xrpbtc","iotusd","iotbtc","ioteth","eosusd","eosbtc","eoseth","sanusd","sanbtc","saneth","omgusd","omgbtc","omgeth","bchusd","bchbtc","bcheth","neousd","neobtc","neoeth","etpusd","etpbtc","etpeth","qtmusd","qtmbtc","qtmeth","avtusd","avtbtc","avteth","edousd","edobtc","edoeth","btgusd","btgbtc","datusd","datbtc","dateth","qshusd","qshbtc","qsheth","yywusd","yywbtc","yyweth","gntusd","gntbtc","gnteth","sntusd","sntbtc","snteth","ioteur","batusd","batbtc","bateth","mnausd","mnabtc","mnaeth","funusd","funbtc","funeth","zrxusd","zrxbtc","zrxeth","tnbusd","tnbbtc","tnbeth","spkusd","spkbtc","spketh","trxusd","trxbtc","trxeth","rcnusd","rcnbtc","rcneth","rlcusd","rlcbtc","rlceth","aidusd","aidbtc","aideth","sngusd","sngbtc","sngeth","repusd","repbtc","repeth","elfusd","elfbtc","elfeth"]
+
+
+var StringSymBitfinex="t" + bitfinex_symbols[0].toUpperCase();
+		for(var i=1; i < bitfinex_symbols.length  ; i++) {
+				SymName="t" + bitfinex_symbols[i].toUpperCase();
+			  StringSymBitfinex=StringSymBitfinex + "," + SymName
+		}
+		console.log(StringSymBitfinex);
+
+// https://api.bitfinex.com/v1/symbols_details
+
+bitfinex_url="https://api.bitfinex.com/v2/tickers?symbols=" + StringSymBitfinex;
+
+FetchfromExchange( proxyUrl + bitfinex_url,ParseBitfinex)
+
+
+}
+
+
+
+function getAllExchanges(jsonData) {
+		var Exchanges=[];
+		for(var currency in jsonData){
+				var val = jsonData[currency].SellPrice;
+				for(var sub_key in val){
+						Exchanges.push(sub_key);
+				}
+		}
+
+		Exchanges = Array.from(new Set(Exchanges))
+		Exchanges.sort();
+		
+		return Exchanges
+}
+
+
+function getAllCurrencies(jsonData) {
+		var Currencies=[];
+		for(var i in jsonData){
+				var key = i;
+				Currencies.push(i);
+		}
+
+
+		Currencies.sort();
+		addFeeInfo(Currencies);
+		return Currencies
+
+}
+
+function findMinMax(all_price_data) {
+
+		var Currencies=getAllCurrencies(all_price_data);
+		var Exchanges=getAllExchanges(all_price_data);
+
+
+		var CurrenyName=""
+				var ExchangeName=""
+				for(var i in Currencies){
+						CurrenyName=Currencies[i];
+
+								all_price_data[CurrenyName].minBuyPrice=50000000;
+								all_price_data[CurrenyName].minBuyExchange="";
+
+								for(var i in Exchanges){
+										ExchangeName=Exchanges[i];
+										var data= all_price_data[CurrenyName].BuyPrice[ExchangeName]
+												if(data != null) {
+														if(data < all_price_data[CurrenyName].minBuyPrice) {
+																all_price_data[CurrenyName].minBuyPrice=data;
+																all_price_data[CurrenyName].minBuyExchange=ExchangeName;
+														}
+												}
+								}
+				}
+				for(var i in Currencies){
+						CurrenyName=Currencies[i];
+								all_price_data[CurrenyName].maxSellPrice=0;
+								all_price_data[CurrenyName].maxSellExchange="";
+
+								for(var i in Exchanges){
+										ExchangeName=Exchanges[i];
+										var data= all_price_data[CurrenyName].SellPrice[ExchangeName]
+												if(data != null) {
+														if(data>all_price_data[CurrenyName].maxSellPrice) {
+																all_price_data[CurrenyName].maxSellPrice=data;
+																all_price_data[CurrenyName].maxSellExchange=ExchangeName;
+														}
+												}
+								}
+				}
+}
+
+function createTable(all_price_data,ValType,tableId) {
+
+		var Currencies=getAllCurrencies(all_price_data);
+		var Exchanges=getAllExchanges(all_price_data);
+
+
+		for(var i in Currencies){
+				console.log(Currencies[i]);
+		}
+		for(var i in Exchanges){
+				console.log(Exchanges[i]);
+		}
+
+		var table = document.getElementById(tableId);
+		rownum=0;
+		colnum=0;
+
+		row = table.insertRow(rownum++);
+		cell1=row.insertCell(colnum++);
+		cell1.colSpan=Exchanges.length+1;
+		cell1.innerHTML =ValType;
+				cell1.style.fontWeight="bold";
+				cell1.style.textAlign="center";
+
+		if(ValType=="SellPrice") {
+				cell1=row.insertCell(colnum++);
+				cell1.innerHTML ="Opportunity";
+				cell1.colSpan=Exchanges.length+2;
+				cell1.style.fontWeight="bold";
+		}
+
+		colnum=0;
+		row = table.insertRow(rownum++);
+		cell1=row.insertCell(colnum++);
+
+		for(var i in Exchanges){
+				cell1=row.insertCell(colnum++);
+				cell1.innerHTML =Exchanges[i];
+				cell1.style.fontWeight="bold";
+		}
+		if(ValType=="SellPrice") {
+				cell1=row.insertCell(colnum++);
+				cell1.innerHTML ="% Gain";
+				cell1.style.fontWeight="bold";
+				cell1=row.insertCell(colnum++);
+				cell1.innerHTML = "Gain\n\r Per Lakh";
+				cell1.style.fontWeight="bold";
+		}
+
+		var CurrenyName=""
+				var ExchangeName=""
+				for(var i in Currencies){
+						colnum=0;
+
+						CurrenyName=Currencies[i];
+						row = table.insertRow(rownum++);
+						cell1=row.insertCell(colnum++);
+						cell1.innerHTML =CurrenyName;
+				cell1.style.fontWeight="bold";
+
+						
+						findMinMax(all_price_data)
+
+						var PercentageGain=100*(all_price_data[CurrenyName].maxSellPrice-all_price_data[CurrenyName].minBuyPrice)/all_price_data[CurrenyName].minBuyPrice
+								PercentageGain=Math.round(PercentageGain* 100) / 100
+								var GainPerLakh=Math.round(100000*(all_price_data[CurrenyName].maxSellPrice-all_price_data[CurrenyName].minBuyPrice)/all_price_data[CurrenyName].minBuyPrice)
+
+								for(var i in Exchanges){
+										ExchangeName=Exchanges[i];
+										cell1=row.insertCell(colnum++);
+										var data= all_price_data[CurrenyName][ValType][ExchangeName]
+
+												if(data == null || isNaN(data)) data="X";
+												else {
+
+														if(data<1000) data=Math.round(data * 100) / 100
+														else if(data<100) data=Math.round(data * 1000) / 1000
+														else if(data<10) data=Math.round(data * 10000) / 10000
+														else 								 data=Math.round(data) 
+												}
+										cell1.innerHTML =data;
+										if(data=="X")  cell1.bgColor = "Black";
+										if(ValType=="BuyPrice" && ExchangeName==	all_price_data[CurrenyName].minBuyExchange ) cell1.bgColor = "#ff9980";
+										if(ValType=="SellPrice" && ExchangeName==	all_price_data[CurrenyName].maxSellExchange ) cell1.bgColor = "#99ff99";
+								}
+						if(ValType=="SellPrice") {
+								cell1=row.insertCell(colnum++);
+								cell1.innerHTML =PercentageGain;
+								if(PercentageGain>0)  cell1.bgColor = "#99ff99";
+								else cell1.bgColor = "#ff9980";
+								cell1=row.insertCell(colnum++);
+								cell1.innerHTML =GainPerLakh;
+								if(PercentageGain>0)  cell1.bgColor = "#99ff99"; 
+								else cell1.bgColor = "#ff9980";
+						}
+
+
+				}
+
+
+}
+
+function UpdatePricesUSD2INR(all_price_data,multiply_fac) {
+
+				var Currencies=getAllCurrencies(all_price_data);
+				var Exchanges=getAllExchanges(all_price_data);
+
+				var data;
+				for(var i in Currencies){
+								CurrenyName=Currencies[i];
+								for(var i in Exchanges){
+												ExchangeName=Exchanges[i];
+												data = all_price_data[CurrenyName].BuyPriceAct[ExchangeName]*multiply_fac
+												if(data<1000) data=Math.round(data * 100) / 100
+														else if(data<100) data=Math.round(data * 1000) / 1000
+														else if(data<10) data=Math.round(data * 10000) / 10000
+												else 								 data=Math.round(data) 
+												all_price_data[CurrenyName].BuyPrice[ExchangeName] = data
+
+												data = all_price_data[CurrenyName].SellPriceAct[ExchangeName]*multiply_fac
+												if(data<1000) data=Math.round(data * 100) / 100
+														else if(data<100) data=Math.round(data * 1000) / 1000
+														else if(data<10) data=Math.round(data * 10000) / 10000
+												else 								 data=Math.round(data) 
+												all_price_data[CurrenyName].SellPrice[ExchangeName] = data
+
+								}
+				}
+}
+
+function createTables() {
+		createTable(all_price_data,"BuyPrice","TableBuyRaw")
+				createTable(all_price_data,"SellPrice","TableSellRaw")
+				console.log(JSON.stringify(Reqd_No_of_Fetch))
+		console.log(JSON.stringify(Exchanges_Fetched));
+		all_price_data_fee=IncludePriceinFee();
+
+		console.log("TEST4");
+		createTable(all_price_data_fee,"BuyPrice","TableBuyFee")
+				createTable(all_price_data_fee,"SellPrice","TableSellFee")
+ 
+
+				createTable(all_price_data_usd,"BuyPrice","USDBuy")
+				createTable(all_price_data_usd,"SellPrice","USDSell")
+UpdatePricesUSD2INR(all_price_data_usd,usd2inr);
+				createTable(all_price_data_usd,"BuyPrice","USDBuyINR")
+				createTable(all_price_data_usd,"SellPrice","USDSellINR")
+
+//CheckCryptopiaExchangesDiff () 
+CheckForeignExchangesDiff () 
+CreateINRbyFrnExchange("INRSellByHITBTCBuy","INR_SELL_USD_BUY");
+CreateINRbyFrnExchange("HITBTCSELLbyINRbuy","USD_SELL_INR_BUY");
+}
+
+function addFeeInfo(Currencies) {
+
+		for(var i in Currencies) {
+				addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.BitBns","0.25")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.BitBns","0.25")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.Koinex","0")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.Koinex","0.25")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.Coindelta","0.3")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.Coindelta","0.3")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.Coinome","0.3")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.Coinome","0.3")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.ZebPay","0.25")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.ZebPay","0.25")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".SellFee.Coinsecure","0.4")
+						addToExistingJsonObject(all_price_data,Currencies[i] + ".BuyFee.Coinsecure","0.4")
+		}
+
+}
+
+function IncludePriceinFee() {
+		console.log("addFeeInfo");
+		var all_price_data_fee=JSON.parse(JSON.stringify(all_price_data))
+				var Currencies=getAllCurrencies(all_price_data_fee);
+		var Exchanges=getAllExchanges(all_price_data_fee);
+
+		for(var i in Currencies){
+				CurrenyName=Currencies[i];
+				for(var i in Exchanges){
+						ExchangeName=Exchanges[i];
+
+						var data= parseFloat(all_price_data_fee[CurrenyName].SellPrice[ExchangeName])
+								var fee= parseFloat(all_price_data_fee[CurrenyName].SellFee[ExchangeName])
+								if(data != null ) {
+										data=data - (data*fee)/100
+
+												if(data<1000) data=Math.round(data * 100) / 100
+														else if(data<100) data=Math.round(data * 1000) / 1000
+														else if(data<10) data=Math.round(data * 10000) / 10000
+												else 								 data=Math.round(data) 
+
+														all_price_data_fee[CurrenyName].SellPrice[ExchangeName]=data
+
+								}
+
+						var data= parseFloat(all_price_data_fee[CurrenyName].BuyPrice[ExchangeName])
+								var fee= parseFloat(all_price_data_fee[CurrenyName].BuyFee[ExchangeName])
+								if(data != null ) {
+										data=data + (data*fee)/100
+												if(data<1000) data=Math.round(data* 100) / 100
+														else if(data<100) data=Math.round(data * 1000) / 1000
+														else if(data<10) data=Math.round(data * 10000) / 10000
+												else 								 data=Math.round(data) 
+														all_price_data_fee[CurrenyName].BuyPrice[ExchangeName]=data;
+								}
+				}
+
+
+		}
+		console.log(JSON.stringify(all_price_data_fee));
+		return all_price_data_fee
+
+}
+
+function TimedLoop(i,RunFunc) {
+		if(--i>0  && Reqd_No_of_Fetch>Exchanges_Fetched ){
+				setTimeout( function() { TimedLoop(i,RunFunc) } , 1000 );
+		} else {
+				RunFunc(0);
+				console.log("LOOP = " + i + " Seconds"); 
+
+		}
+}
+
+
+const URL = 'https://jsonplaceholder.typicode.com/todos/1'
+// Send a GET request without any data to the server
+fetch(URL, {method: "GET"})
+// Get the JSON data from the raw response
+   .then(res => res.json())
+// Print the result
+   .then(console.log)
+
+
+const URL2 = 'https://jsonplaceholder.typicode.com/todos'
+//const URL2 = 'file:///C:/NITIN%20JINDAL/Projects/web_driven_commands/page2.html'
+const data = {
+   "userId": 1000,
+   "title": "NITIN",
+   "completed": false
+};
+// Send a post request
+fetch(URL2, {
+   method: "POST",
+   body: JSON.stringify(data),
+   headers: {
+      "Content-type": "application/json; charset=UTF-8"
+   }
+}).then(console.log)
+
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const product = urlParams.get('product')
+console.log("product=" + product)
+				
+
+
+
+var all_price_data = { };
+var all_price_data_usd = { };
+var all_price_data_fee = { };
+var proxyUrl = 'https://cors-anywhere.herokuapp.com/'
+var usd2inr;
+
+
+var Reqd_No_of_Fetch=0;
+var Exchanges_Fetched=0;
+
+
+// FetchAll()
+
+console.log("	Reqd_No_of_Fetch="+ Reqd_No_of_Fetch);
+
+//setTimeout(createTables, 1000);
+
+
+TimedLoop(100,createTables);
+console.log("ALL DONE")
+
+// https://api.binance.com/api/v3/ticker/bookTicker
+// https://api.hitbtc.com/api/2/public/ticker
+ // https://www.cryptopia.co.nz/api/GetMarkets/USDT
+
+// https://api.fixer.io/latest?base=USD;symbols=USD,INR
+// https://api.bitfinex.com/v1/symbols_details
+
+
+				</script>
+
+		</body>
+</html>
+
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
